@@ -41,7 +41,7 @@ static int reconnectinterval = 10; /* Interval to wait between reconnection atte
 static int int32encoding = DE_STEIM2; /* Encoding for 32-bit integer data */
 
 #define MAX_WAIT_STATE_BEFORE_EXIT 240 /* max seconds to sit in WAIT for reg state */
-static unsigned long long  MAIN_WHILE_USLEEP =(unsigned long)1e5; // 1 sec=1e6, sleep 1/10 sec
+static unsigned long  MAIN_WHILE_USLEEP =(unsigned long)1e5; /* 1 sec=1e6, sleep 1/10 sec */
 
 #ifndef _WIN32
 /********************* Signal handling  routines ******************/
