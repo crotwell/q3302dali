@@ -82,6 +82,8 @@ void lib330Interface_cleanup();
 int lib330Interface_waitForState(enum tlibstate waitFor, int maxSecondsToWait);
 enum tlibstate lib330Interface_getLibState();
 
+void cleanup();
+void cleanupAndExit(int i);
 static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime );
 static void sendrecord ( char *record, int reclen, void *handlerdata );
 static void usage ();
