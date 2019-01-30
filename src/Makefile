@@ -1,7 +1,7 @@
 
 LINUX_FLAGS=-lpthread -lc -lm
 SOLARIS_FLAGS=-lthread -lc -lm -lnsl -lsocket -lrt
-SPECIFIC_FLAGS=$($(PLATFORM)_FLAGS)
+SPECIFIC_FLAGS=$(LINUX_FLAGS)
 
 LIB330_DIR = ../lib330
 LIBMSEED_DIR = ../libmseed
