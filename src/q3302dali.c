@@ -49,12 +49,12 @@ static unsigned long  MAIN_WHILE_USLEEP =(unsigned long)1e5; /* 1 sec=1e6, sleep
 void cleanup() {
   stopsig = 1;
   lib330Interface_cleanup();
-  
+
   /* Flush all remaining data streams and close the connections */
   packtraces (NULL, 1, HPTERROR);
   if ( dlcp->link != -1 )
     dl_disconnect (dlcp);
-  
+
   if ( verbose )
   {
     MSTrace *mst = mstg->traces;
@@ -64,9 +64,9 @@ void cleanup() {
       mst = mst->next;
     }
   }
-  
+
   ms_log (1, "Terminating %s\n", Q3302DALI_NAME);
-  
+
 }
 
 void cleanupAndExit(int i) {
@@ -100,7 +100,7 @@ int main ( int argc, char **argv )
   int    quit;
   int    retryCount;           /* to prevent flooding the log file */
   int    connected;            /* connection flag */
-  
+
   int registration_count = 0;
   int wait_counter = 0;
   time_t lastStatusUpdate;
@@ -108,27 +108,32 @@ int main ( int argc, char **argv )
 #ifndef _WIN32
   /* Signal handling, use POSIX calls with standardized semantics */
   struct sigaction sa;
-  
+
   sa.sa_handler = dummy_handler;
   sa.sa_flags = SA_RESTART;
   sigemptyset(&sa.sa_mask);
   sigaction(SIGALRM, &sa, NULL);
-  
+
   sa.sa_handler = term_handler;
   sigaction(SIGINT, &sa, NULL);
   sigaction(SIGQUIT, &sa, NULL);
   sigaction(SIGTERM, &sa, NULL);
-  
+
   sa.sa_handler = SIG_IGN;
   sigaction(SIGHUP, &sa, NULL);
   sigaction(SIGPIPE, &sa, NULL);
-  
+
   /* Signal-handling function that needs to be inherited by threads */
   sa.sa_handler = ThreadSignalHandler;
   sigaction(SIGUSR1, &sa, NULL);
 #endif
-  
-  
+
+/* Initialize the verbosity for the dl_log function */
+dl_loginit (verbose-1, &print_timelog, "", &print_timelog, "");
+
+/* Initialize the logging for the ms_log family */
+ms_loginit (&print_timelog, NULL, &print_timelog, NULL);
+
   if (argc<2) {
     usage();
     exit(1);
@@ -137,14 +142,14 @@ int main ( int argc, char **argv )
   handle_opts(argc, argv);
 
   lib330Interface_initialize();
-  
+
   /* Initialize trace buffer */
   if ( ! (mstg = mst_initgroup ( mstg )) )
   {
     ms_log (2, "Cannot initialize MSTraceList\n");
     exit (1);
     }
-  
+
 
   char tmps[285];
   sprintf(tmps, "%s:%d", gConfig.datalinkHost, gConfig.datalinkPort);
@@ -156,7 +161,7 @@ int main ( int argc, char **argv )
     fprintf (stderr, "Cannot allocation DataLink descriptor\n");
     exit (1);
   }
-  
+
   /* Connect to destination DataLink server */
   if ( dl_connect (dlcp) < 0 )
   {
@@ -165,11 +170,11 @@ int main ( int argc, char **argv )
   }
   else if ( verbose )
     ms_log (1, "Connected to ringserver at %s\n", dlcp->addr);
-  
+
   /* to prevent flooding the log file during long reconnect attempts */
   retryCount=0;  /* it may be reset elsewere */
-  
-  
+
+
   // keep trying to register as long as 1) we haven't and 2) we're
   // not supposed to die and 3) we don't hit the max retry counts (default 5)
   lib330Interface_startRegistration();
@@ -187,7 +192,7 @@ int main ( int argc, char **argv )
       fprintf(stderr, "q3302ew: retrying registration: %d\n", registration_count);
     }
   }
-  
+
   // now we're registered and getting data.  We'll keep doing so until we're told to stop.
   lastStatusUpdate = time(NULL);
   while( ! stopsig) {
@@ -220,9 +225,9 @@ void lib330Interface_initializeCreationInfo() {
   // Fill out the parts of the creationInfo that we know about
   uint64 serial;
   char continuityFile[1024];
-  
+
   serial = strtoll(gConfig.serialnumber, NULL, 16);
-  
+
   memcpy(creationInfo.q330id_serial, &serial, sizeof(uint64));
   switch(gConfig.dataport) {
     case 1:
@@ -301,9 +306,9 @@ void lib330Interface_displayStatusUpdate() {
   topstat libStatus;
   time_t rightNow = time(NULL);
   int i;
-  
+
   currentState = lib_get_state(stationContext, &lastError, &libStatus);
-  
+
   // do some internal maintenence if required (this should NEVER happen)
   if(currentState != lib330Interface_getLibState()) {
     string63 newStateName;
@@ -312,12 +317,12 @@ void lib330Interface_displayStatusUpdate() {
     fprintf(stderr, "+++ State change to '%s'\n", newStateName);
     lib330Interface_libStateChanged(currentState);
   }
-  
-  
+
+
   // version and localtime
   fprintf(stderr, "+++ %s %s %s status for %s.  Local time: %s", Q3302DALI_NAME, Q3302DALI_VERSION, Q3302DALI_BUILD,
              libStatus.station_name, ctime(&rightNow));
-  
+
   // BPS entries
   fprintf(stderr, "--- Bps from Q330 (min/hour/day): ");
   for(i=(int)AD_MINUTE; i <= (int)AD_DAY; i = i + 1) {
@@ -332,7 +337,7 @@ void lib330Interface_displayStatusUpdate() {
       fprintf(stderr, "\n");
     }
   }
-  
+
   fprintf(stderr, "--- Packets from Q330 (min/hour/day): ");
   for(i=(int)AD_MINUTE; i <= (int)AD_DAY; i = i + 1) {
     if((int)libStatus.accstats[AC_PACKETS][i] != (int)INVALID_ENTRY) {
@@ -346,7 +351,7 @@ void lib330Interface_displayStatusUpdate() {
       fprintf(stderr, "\n");
     }
   }
-  
+
   // percent of the buffer left, and the clock quality
   fprintf(stderr, "--- Q330 Packet Buffer Available: %d Clock Quality: %d\n", 100-((int)libStatus.pkt_full),
              (int)libStatus.clock_qual);
@@ -370,14 +375,14 @@ void lib330Interface_initialize() {
   pmodules modules;
   const tmodule *module;
   int x;
-  
+
 #ifdef WIN32
   WSAStartup(0x101, &wdata);
 #endif
   currentLibState = LIBSTATE_IDLE;
   lib330Interface_initializeCreationInfo();
   lib330Interface_initializeRegistrationInfo();
-  
+
   modules = lib_get_modules();
   fprintf(stderr, "+++ Lib330 Modules:\n");
   for(x=0; x <= MAX_MODULES - 1; x++) {
@@ -403,7 +408,7 @@ void lib330Interface_initialize() {
   } else {
     lib330Interface_handleError(creationInfo.resp_err);
   }
-  
+
 }
 
 /**
@@ -411,11 +416,11 @@ void lib330Interface_initialize() {
  */
 void lib330Interface_libStateChanged(enum tlibstate newState) {
   string63 newStateName;
-  
+
   lib_get_statestr(newState, &newStateName);
   fprintf(stderr, "+++ State change to '%s'\n", newStateName);
   currentLibState = newState;
-  
+
   /*
    ** We have no good reason for sitting in RUNWAIT, so lets just go
    */
@@ -516,9 +521,9 @@ int lib330Interface_waitForState(enum tlibstate waitFor, int maxSecondsToWait) {
 
 void lib330Interface_stateCallback(pointer p){
   tstate_call *state;
-  
+
   state = (tstate_call *)p;
-  
+
   if(state->state_type == ST_STATE) {
     lib330Interface_libStateChanged((enum tlibstate)state->info);
   }
@@ -528,9 +533,9 @@ void lib330Interface_msgCallback(pointer p){
   tmsg_call *msg = (tmsg_call *) p;
   string95 msgText;
   char dataTime[32];
-  
+
   lib_get_msg(msg->code, &msgText);
-  
+
   // we don't need to worry about current time, the log system handles that
   //jul_string(msg->timestamp, &currentTime);
   if(!msg->datatime) {
@@ -543,27 +548,26 @@ void lib330Interface_msgCallback(pointer p){
 
 void lib330Interface_1SecCallback(pointer p){
   tonesec_call *data = (tonesec_call *) p;
-  
+
   static struct blkt_1000_s Blkt1000;
   static struct blkt_1001_s Blkt1001;
   MSTrace *mst = NULL;
   static MSRecord *mstemplate = NULL;
   static MSRecord *msr = NULL;
-  
-  int recordspacked = 0;
-  
+
+
   char *sta, *net;
   char netsta[10];
-  
+
   fprintf(stderr, "OneSec for %s {%d} %d\n", data->channel, data->rate, data->filter_bits);
-  
+
   /* Set up MSRecord template */
   if ( (msr = msr_init (msr)) == NULL )
   {
     ms_log (2, "Cannot initialize packing template\n");
     return;
   }
-  
+
   // seperate the station from the net
   strcpy(netsta, data->station_name);
   net = netsta;
@@ -595,24 +599,41 @@ void lib330Interface_1SecCallback(pointer p){
   msr->samplecnt = msr->numsamples;
   msr->datasamples = data->samples;
   msr->sampletype = 'i';
-  
-  
+
+  processMseed(msr);
+}
+
+/* miniseed record mode from q330 */
+void lib330Interface_miniCallback(pointer p){
+
+  tminiseed_call *data = (tminiseed_call *) p;
+
+  fprintf(stderr, "Miniseed for %s {%d} %d\n", data->channel, data->data_size, data->filter_bits);
+
+  processMseed(data->data_address);
+
+}
+
+static void processMseed(MSRecord *msr)
+{
+  MSTrace *mst = NULL;
+  int recordspacked = 0;
   /* Add data to trace buffer, creating new entry or extending as needed */
   if ( ! (mst = mst_addmsrtogroup (mstg, msr, 1, -1.0, -1.0)) )
   {
     ms_log (3, "Cannot add data to trace buffer!\n");
     return;
   }
-  
+
   /* To keep small variations in the sample rate or time base from accumulating
    * to large errors, re-base the time of the buffer by back projecting from
    * the endtime, which is calculated from the tracebuf starttime and number
    * of samples.  In essence, this maintains a time line based on the starttime
    * of received tracebufs.  It also retains the variations of the sample rate
    * and other characteristics of the original data stream to some degree. */
-  
+
   mst->starttime = mst->endtime - (hptime_t) (((double)(mst->numsamples - 1) / mst->samprate * HPTMODULUS) + 0.5);
-  
+
   /* Allocate & init per-trace stats structure if needed */
   if ( ! mst->prvtptr )
   {
@@ -621,7 +642,7 @@ void lib330Interface_1SecCallback(pointer p){
       ms_log (3, "Cannot allocate buffer for trace stats!\n");
       return;
     }
-    
+
     ((TraceStats *)mst->prvtptr)->earliest = HPTERROR;
     ((TraceStats *)mst->prvtptr)->latest = HPTERROR;
     ((TraceStats *)mst->prvtptr)->update = HPTERROR;
@@ -629,10 +650,10 @@ void lib330Interface_1SecCallback(pointer p){
     ((TraceStats *)mst->prvtptr)->pktcount = 0;
     ((TraceStats *)mst->prvtptr)->reccount = 0;
   }
-  
+
   ((TraceStats *)mst->prvtptr)->update = dlp_time();
   ((TraceStats *)mst->prvtptr)->pktcount += 1;
-  
+
   if ( (recordspacked = packtraces (mst, 0, HPTERROR)) < 0 )
   {
     ms_log (3, "Cannot pack trace buffer or send records!\n");
@@ -641,28 +662,7 @@ void lib330Interface_1SecCallback(pointer p){
             (long long int) mst->numsamples);
     return;
   }
-  
-  return;
 }
-
-/* miniseed record mode from q330 */
-void lib330Interface_miniCallback(pointer p){
-  MSTrace *mst = NULL;
-  
-  tminiseed_call *data = (tminiseed_call *) p;
-  
-  fprintf(stderr, "Miniseed for %s {%d} %d\n", data->channel, data->data_size, data->filter_bits);
-  
-  
-  /* Add data to trace buffer, creating new entry or extending as needed */
-  if ( ! (mst = mst_addmsrtogroup (mstg, data->data_address, 1, -1.0, -1.0)) )
-  {
-    ms_log (3, "Cannot add data to trace buffer!\n");
-    return;
-  }
-  
-}
-
 
 /*********************************************************************
  * packtraces:
@@ -682,14 +682,14 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
   static struct blkt_1000_s Blkt1000;
   static struct blkt_1001_s Blkt1001;
   static MSRecord *mstemplate = NULL;
-  
+
   MSTrace *prevmst;
   void *handlerdata = mst;
   int trpackedrecords = 0;
   int packedrecords = 0;
   int flushflag = flush;
   int encoding = -1;
-  
+
   /* Set up MSRecord template, include blockette 1000 and 1001 */
   if ( (mstemplate = msr_init (mstemplate)) == NULL )
   {
@@ -699,7 +699,7 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
   else
   {
     mstemplate->dataquality = 'D';
-    
+
     /* Add blockettes 1000 & 1001 to template */
     memset (&Blkt1000, 0, sizeof(struct blkt_1000_s));
     msr_addblockette (mstemplate, (char *) &Blkt1000,
@@ -708,7 +708,7 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
     msr_addblockette (mstemplate, (char *) &Blkt1001,
                       sizeof(struct blkt_1001_s), 1001, 0);
   }
-  
+
   if ( mst )
   {
     if ( mst->sampletype == 'f' )
@@ -717,26 +717,26 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
       encoding = DE_FLOAT64;
     else
       encoding = int32encoding;
-    
+
     strcpy (mstemplate->network, mst->network);
     strcpy (mstemplate->station, mst->station);
     strcpy (mstemplate->location, mst->location);
     strcpy (mstemplate->channel, mst->channel);
-    
+
     trpackedrecords = mst_pack (mst, sendrecord, handlerdata, 512,
                                 encoding, 1, NULL, flushflag,
                                 verbose-2, mstemplate);
-    
+
     if ( trpackedrecords == -1 )
       return -1;
-    
+
     packedrecords += trpackedrecords;
   }
   else
   {
     mst = mstg->traces;
     prevmst = NULL;
-    
+
     while ( mst && stopsig != 2 )
     {
       if ( mst->numsamples > 0 )
@@ -747,7 +747,7 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
           encoding = DE_FLOAT64;
         else
           encoding = int32encoding;
-        
+
         /* Flush data buffer if update time is less than flushtime */
         if ( flush == 0 && mst->prvtptr && flushtime != HPTERROR )
           if (((TraceStats *)mst->prvtptr)->update < flushtime )
@@ -756,37 +756,37 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
                     mst->network, mst->station, mst->location, mst->channel);
             flushflag = 1;
           }
-        
+
         strcpy (mstemplate->network, mst->network);
         strcpy (mstemplate->station, mst->station);
         strcpy (mstemplate->location, mst->location);
         strcpy (mstemplate->channel, mst->channel);
-        
+
         trpackedrecords = mst_pack (mst, sendrecord, handlerdata, 512,
                                     encoding, 1, NULL, flushflag,
                                     verbose-2, mstemplate);
-        
+
         if ( trpackedrecords == -1 )
           return -1;
-        
+
         packedrecords += trpackedrecords;
       }
-      
+
       /* Remove trace buffer entry if no samples remaining */
       if ( mst->numsamples <= 0 )
       {
         MSTrace *nextmst = mst->next;
-        
+
         if ( verbose )
           logmststats (mst);
-        
+
         if ( ! prevmst )
           mstg->traces = mst->next;
         else
           prevmst->next = mst->next;
-        
+
         mst_free (&mst);
-        
+
         mst = nextmst;
       }
       else
@@ -796,7 +796,7 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
       }
     }
   }
-  
+
   return packedrecords;
 }  /* End of packtraces() */
 
@@ -816,10 +816,10 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
   char streamid[100];
   int writeack = 0;
   int rv;
-  
+
   if ( ! record )
     return;
-  
+
   /* Parse Mini-SEED header */
   if ( (rv = msr_unpack (record, reclen, &msr, 0, 0)) != MS_NOERROR )
   {
@@ -827,30 +827,30 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
     ms_log (2, "Error unpacking %s: %s", streamid, ms_errorstr(rv));
     return;
   }
-  
+
   /* Generate stream ID for this record: NET_STA_LOC_CHAN/MSEED */
   msr_srcname (msr, streamid, 0);
   strcat (streamid, "/MSEED");
-  
+
   /* Determine high precision end time */
   endtime = msr_endtime (msr);
-  
+
   if ( verbose >= 2 )
     ms_log (1, "Sending %s\n", streamid);
-  
+
   /* Send record to server, loop */
   while ( dl_write (dlcp, record, reclen, streamid, msr->starttime, endtime, writeack) < 0 )
   {
     if ( dlcp->link == -1 )
       dl_disconnect (dlcp);
-    
+
     if ( stopsig )
     {
       ms_log (2, "Termination signal with no connection to DataLink, the data buffers will be lost");
       stopsig = 2;
       break;
     }
-    
+
     if ( ! reconnectinterval )
     {
       stopsig = 2;
@@ -862,18 +862,18 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
       dlp_usleep (reconnectinterval * (unsigned long)1e6);
     }
   }
-  
+
   /* Update stats */
   if ( mst )
   {
     stats = (TraceStats *)mst->prvtptr;
-    
+
     if ( stats->earliest == HPTERROR || stats->earliest > msr->starttime )
       stats->earliest = msr->starttime;
-    
+
     if ( stats->latest == HPTERROR || stats->latest < endtime )
       stats->latest = endtime;
-    
+
     stats->xmit = dlp_time();
     stats->reccount += 1;
   }
@@ -907,7 +907,7 @@ static void usage ( void )
           "\n"
           "The export server and ringserver addresses are specified in host:port format\n"
           "\n");
-  
+
   exit (1);
 } /* End of usage() */
 
@@ -915,16 +915,16 @@ static void usage ( void )
 /* handle_opts() - handles any command line options.
  and sets the Progname extern to the
  base-name of the command.
- 
+
  Returns:
  TRUE if options are parsed okay.
  FALSE if there are bad or conflicting
  options.
- 
+
  */
 
 static int handle_opts(int argc, char ** argv)  {
-  
+
   if(argc != 2) {
     usage();
     fprintf(stderr,"Config file not specified\n");
@@ -938,6 +938,24 @@ static int handle_opts(int argc, char ** argv)  {
   return 1;
 }
 
+/***************************************************************************
+ * print_timelog:
+ *
+ * Log message print handler.  Prefixes a local time string to the
+ * message before printing.
+ ***************************************************************************/
+static void print_timelog ( char *msg )
+{
+  char timestr[100];
+  time_t loc_time;
+
+  /* Build local time string and cut off the newline */
+  time(&loc_time);
+  strcpy(timestr, asctime(localtime(&loc_time)));
+  timestr[strlen(timestr) - 1] = '\0';
+
+  fprintf (stderr, "%s - %s", timestr, msg);
+}  /* End of print_timelog() */
 
 /*********************************************************************
  * logmststats:
@@ -951,13 +969,13 @@ static void logmststats ( MSTrace *mst )
   char ltime[50];
   char utime[50];
   char xtime[50];
-  
+
   stats = (TraceStats *) mst->prvtptr;
   ms_hptime2mdtimestr (stats->earliest, etime, 1);
   ms_hptime2mdtimestr (stats->latest, ltime, 1);
   ms_hptime2mdtimestr (stats->update, utime, 1);
   ms_hptime2mdtimestr (stats->xmit, xtime, 1);
-  
+
   ms_log (0, "%s_%s_%s_%s, earliest: %s, latest: %s\n",
           mst->network, mst->station, mst->location, mst->channel,
           (stats->earliest == HPTERROR) ? "NONE":etime,

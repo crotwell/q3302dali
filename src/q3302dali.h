@@ -1,6 +1,6 @@
 //
 //  q3302dali.h
-//  
+//
 //
 //  Created by Philip Crotwell on 1/29/19.
 //
@@ -84,10 +84,12 @@ enum tlibstate lib330Interface_getLibState();
 
 void cleanup();
 void cleanupAndExit(int i);
+static void processMseed(MSRecord *msr);
 static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime );
 static void sendrecord ( char *record, int reclen, void *handlerdata );
 static void usage ();
 static int handle_opts(int argc, char ** argv);
+static void print_timelog ( char *msg );
 static void logmststats ( MSTrace *mst );
 
 #endif /* q3302dali_h */
