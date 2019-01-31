@@ -562,6 +562,7 @@ void lib330Interface_1SecCallback(pointer p){
 
   char *sta, *net;
   char netsta[10];
+  double startTS;
 
   fprintf(stderr, "OneSec for %s {%d} %d\n", data->channel, data->rate, data->filter_bits);
 
@@ -592,7 +593,8 @@ void lib330Interface_1SecCallback(pointer p){
   ms_strncpclean (msr->station, sta, 5);
   ms_strncpclean (msr->location, data->location, 2);
   ms_strncpclean (msr->channel, data->channel, 3);
-  msr->starttime = (hptime_t)(MS_EPOCH2HPTIME(janFirst2000+data->timestamp));
+  startTS = janFirst2000 + data->timestamp;
+  msr->starttime = (hptime_t)(MS_EPOCH2HPTIME (startTS));
   msr->samprate = data->rate;
   // handle the sub 1hz channels differently
   if(data->rate > 0) {
