@@ -564,7 +564,7 @@ void lib330Interface_1SecCallback(pointer p){
   char netsta[10];
   double startTS;
 
-  fprintf(stderr, "OneSec for %s {%d} %d\n", data->channel, data->rate, data->filter_bits);
+  if (verbose > 2) fprintf(stderr, "OneSec for %s {%d} %d\n", data->channel, data->rate, data->filter_bits);
 
   /* Set up MSRecord template */
   if ( (msr = msr_init (msr)) == NULL )
@@ -614,7 +614,7 @@ void lib330Interface_miniCallback(pointer p){
 
   tminiseed_call *data = (tminiseed_call *) p;
 
-  fprintf(stderr, "Miniseed for %s {%d} %d\n", data->channel, data->data_size, data->filter_bits);
+  if (verbose > 2) fprintf(stderr, "Miniseed for %s {%d} %d\n", data->channel, data->data_size, data->filter_bits);
 
   processMseed(data->data_address);
 
@@ -894,24 +894,7 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
 static void usage ( void )
 {
   fprintf(stderr,"\n"
-          "Usage: q3302dali [options] <exportserver:port> <ringserver:port>\n"
-          "\n"
-          "  -u            Print this usage message\n"
-          "  -v            Be more verbose, mutiple flags can be used\n"
-          "\n"
-          "  -f latency    Internal buffer flush latency in seconds, default 300\n"
-          "  -R interval   Reconnection interval/wait in seconds, default 10\n"
-          "  -t timeout    Socket timeout in seconds, default 80\n"
-          "  -Ie encoding  Specify encoding for 32-bit integers, default STEIM2\n"
-          "  -Ar rate      Rate (approximate) to send hearbeats to server, default 120\n"
-          "  -At text      Text for heartbeat to server, default='alive' or 'ImpAlive'\n"
-          "  -Sr rate      Rate at which to expect heartbeats from server, default 60\n"
-          "  -St text      Text expected in heartbeats from server, default='ExpAlive'\n"
-          "  -m maxmsg     Maximum message size that can be received, default 4096\n"
-          "  -Hl #/#/#     Specify the logo to use for heartbeats, default '0/0/3'\n"
-          "                   #/#/# is the <inst id>/<mod id>/<heartbeat type>\n"
-          "\n"
-          "The export server and ringserver addresses are specified in host:port format\n"
+          "Usage: q3302dali [options] <configfile>\n"
           "\n");
 
   exit (1);
