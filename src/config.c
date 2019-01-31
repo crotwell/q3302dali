@@ -130,12 +130,18 @@ int readConfig(char *configFile) {
     } else if(k_its("HeartbeatInt")) {
         // ignore
       //gConfig.HeartbeatInt = k_int();
+    } else if(k_its("Verbosity")) {
+      gConfig.Verbosity = k_int();
     } else if(k_its("LogFile")) {
       gConfig.LogFile = k_int();
     } else if(k_its("DataLinkHost")) {
         strcpy(gConfig.datalinkHost, k_str());
     } else if(k_its("DataLinkPort")) {
         gConfig.datalinkPort = k_int();
+    } else if(k_its("FlushLatency")) {
+      gConfig.FlushLatency = k_int();
+    } else if(k_its("ReconnectInterval")) {
+      gConfig.ReconnectInterval = k_int();
     } else if(k_its("IPAddress")) {
       strcpy(gConfig.IPAddress, k_str());
     } else if(k_its("BasePort")) {

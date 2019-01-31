@@ -9,8 +9,11 @@ typedef struct {
   char ConfigFileName[255];
   char ModuleId[40];
   char RingName[40];
+  int32 Verbosity;
   char datalinkHost[255];
   int32 datalinkPort;
+  int32 FlushLatency;
+  int32 ReconnectInterval;
   long RingKey;
   int32  HeartbeatInt;
   int32  LogFile;

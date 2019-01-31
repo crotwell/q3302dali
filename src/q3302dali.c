@@ -140,7 +140,10 @@ ms_loginit (&print_timelog, NULL, &print_timelog, NULL);
   }
   // then read config
   handle_opts(argc, argv);
-
+  verbose = gConfig.Verbosity;
+  flushlatency = gConfig.FlushLatency;
+  reconnectinterval = gConfig.ReconnectInterval;
+  
   lib330Interface_initialize();
 
   /* Initialize trace buffer */
