@@ -29,6 +29,7 @@ tpar_register registrationInfo;
 tpar_create creationInfo;
 tcontext stationContext;
 
+static double janFirst2000 =  946684800.000000;
 
 static char *rsaddr    = 0;        /* DataLink/ringserver receiver address in IP:port format */
 static DLCP *dlcp      = 0;        /* DataLink connection handle */
@@ -591,7 +592,7 @@ void lib330Interface_1SecCallback(pointer p){
   ms_strncpclean (msr->station, sta, 5);
   ms_strncpclean (msr->location, data->location, 2);
   ms_strncpclean (msr->channel, data->channel, 3);
-  msr->starttime = (hptime_t)(MS_EPOCH2HPTIME(data->timestamp));
+  msr->starttime = (hptime_t)(MS_EPOCH2HPTIME(janFirst2000+data->timestamp));
   msr->samprate = data->rate;
   // handle the sub 1hz channels differently
   if(data->rate > 0) {
