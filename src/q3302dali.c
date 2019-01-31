@@ -143,7 +143,7 @@ ms_loginit (&print_timelog, NULL, &print_timelog, NULL);
   verbose = gConfig.Verbosity;
   flushlatency = gConfig.FlushLatency;
   reconnectinterval = gConfig.ReconnectInterval;
-  
+
   lib330Interface_initialize();
 
   /* Initialize trace buffer */
@@ -591,7 +591,7 @@ void lib330Interface_1SecCallback(pointer p){
   ms_strncpclean (msr->station, sta, 5);
   ms_strncpclean (msr->location, data->location, 2);
   ms_strncpclean (msr->channel, data->channel, 3);
-  msr->starttime = data->timestamp;
+  msr->starttime = (hptime_t)(MS_EPOCH2HPTIME(data->timestamp));
   msr->samprate = data->rate;
   // handle the sub 1hz channels differently
   if(data->rate > 0) {
