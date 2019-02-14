@@ -48,7 +48,7 @@ static unsigned long  MAIN_WHILE_USLEEP =(unsigned long)1e5; /* 1 sec=1e6, sleep
 /********************* Signal handling  routines ******************/
 
 void cleanup() {
-  stopsig = 1;
+  if (stopsig == 0) stopsig = 1;
   lib330Interface_cleanup();
 
   /* Flush all remaining data streams and close the connections */
@@ -71,6 +71,7 @@ void cleanup() {
 }
 
 void cleanupAndExit(int i) {
+  stopsig = 10+i+1;
   cleanup();
   // give main while a chance to finish
   dlp_usleep (2*MAIN_WHILE_USLEEP);
@@ -188,8 +189,8 @@ ms_loginit (&print_timelog, NULL, &print_timelog, NULL);
     registration_count++;
     if (registration_count > gConfig.RegistrationCyclesLimit)
     {
+      stopsig=2; // signal not to enter while loop for processing
       fprintf(stderr, "q3302ew: regsitration limit of %d tries reached, exiting", registration_count);
-      cleanupAndExit(0);
     }
     else
     {
@@ -213,12 +214,12 @@ ms_loginit (&print_timelog, NULL, &print_timelog, NULL);
     }
     if (wait_counter >= MAX_WAIT_STATE_BEFORE_EXIT) {
       fprintf(stderr, "q3302ew: hung in wait state for more than: %d seconds\n", MAX_WAIT_STATE_BEFORE_EXIT);
-      cleanup();
+      stopsig=2;
     }
   }
   // we've been asked to terminate
   cleanup();
-  return(0);
+  return(stopsig-1);
 } // end main
 
 
@@ -470,15 +471,29 @@ void lib330Interface_changeState(enum tlibstate newState, enum tliberr reason) {
 
 void lib330Interface_cleanup() {
   enum tliberr errcode;
+  int loopCount;
   fprintf(stderr, "+++ Cleaning up lib330 Interface\n");
   lib330Interface_startDeregistration();
+  loopCount=0;
   while(lib330Interface_getLibState() != LIBSTATE_IDLE) {
+    loopCount++;
+    if (loopCount % 100 == 0) {
+      fprintf(stderr, "...wait for lib330Interface_getLibState() == LIBSTATE_IDLE, %d\n", lib330Interface_getLibState());
+    }
     dlp_usleep(MAIN_WHILE_USLEEP);
   }
+  fprintf(stderr, "+++ lib330Interface_getLibState() == LIBSTATE_IDLE\n");
   lib330Interface_changeState(LIBSTATE_TERM, LIBERR_CLOSED);
+  fprintf(stderr, "+++ lib330Interface_changeState(LIBSTATE_TERM, LIBERR_CLOSED)\n");
+  loopCount=0;
   while(lib330Interface_getLibState() != LIBSTATE_TERM) {
+    loopCount++;
+    if (loopCount % 100 == 0) {
+      fprintf(stderr, "...wait for lib330Interface_getLibState() == LIBSTATE_TERM\n");
+    }
     dlp_usleep(MAIN_WHILE_USLEEP);
   }
+  fprintf(stderr, "+++ lib330Interface_getLibState() == LIBSTATE_TERM\n");
   errcode = lib_destroy_context(&(stationContext));
   if(errcode != LIBERR_NOERR) {
     lib330Interface_handleError(errcode);
@@ -917,12 +932,14 @@ static int handle_opts(int argc, char ** argv)  {
   if(argc != 2) {
     usage();
     fprintf(stderr,"Config file not specified\n");
-    cleanupAndExit(1);
+    stopsig=4;
+    cleanupAndExit(stopsig);
   }
   if (readConfig(argv[1]) == -1) {
     usage();
     fprintf(stderr,"Too many q3302ew.d config problems\n");
-    cleanupAndExit(1);
+    stopsig=5;
+    cleanupAndExit(stopsig);
   }
   return 1;
 }
