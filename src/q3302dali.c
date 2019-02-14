@@ -645,8 +645,7 @@ void lib330Interface_miniCallback(pointer p){
   msr_unpackResult = msr_unpack (data->data_address, data->data_size, &msr,
               0, verbose);
   if (msr_unpackResult == MS_NOERROR) {
-    fprintf(stderr, "Miniseed unpacked: samplecnt: %ld numsamples: %ld  year: %d  day: %d\n", msr->samplecnt, msr->numsamples, msr->fsdh->start_time.year, msr->fsdh->start_time.day);
-    processMseed(msr);
+    sendrecord ( data->data_address, data->data_size, NULL );
   } else {
     ms_log (2, "Cannot unpack ms record %d\n", msr_unpackResult);
     return;
