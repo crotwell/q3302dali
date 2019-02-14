@@ -71,7 +71,11 @@ void cleanup() {
 }
 
 void cleanupAndExit(int i) {
-  stopsig = 10+i+1;
+  if (i == 0) {
+    stopsig = 1;
+  } else {
+    stopsig = i;
+  }
   cleanup();
   // give main while a chance to finish
   dlp_usleep (2*MAIN_WHILE_USLEEP);
@@ -626,12 +630,27 @@ void lib330Interface_1SecCallback(pointer p){
 
 /* miniseed record mode from q330 */
 void lib330Interface_miniCallback(pointer p){
-
+  MSRecord *msr = NULL;
+  int msr_unpackResult;
   tminiseed_call *data = (tminiseed_call *) p;
 
   if (verbose > 2) fprintf(stderr, "Miniseed for %s {%d} %d\n", data->channel, data->data_size, data->filter_bits);
 
-  processMseed(data->data_address);
+  /* Set up MSRecord template */
+  if ( (msr = msr_init (msr)) == NULL )
+  {
+    ms_log (2, "Cannot initialize packing template\n");
+    return;
+  }
+  msr_unpackResult = msr_unpack (data->data_address, data->data_size, &msr,
+              0, verbose);
+  if (msr_unpackResult == MS_NOERROR) {
+    fprintf(stderr, "Miniseed unpacked: samplecnt: %ld numsamples: %ld  year: %d  day: %d\n", msr->samplecnt, msr->numsamples, msr->fsdh->start_time.year, msr->fsdh->start_time.day);
+    processMseed(msr);
+  } else {
+    ms_log (2, "Cannot unpack ms record %d\n", msr_unpackResult);
+    return;
+  }
 
 }
 
@@ -758,7 +777,7 @@ static int packtraces ( MSTrace *mst, int flush, hptime_t flushtime )
     mst = mstg->traces;
     prevmst = NULL;
 
-    while ( mst && stopsig != 2 )
+    while ( mst && stopsig < 2 )
     {
       if ( mst->numsamples > 0 )
       {
@@ -932,13 +951,13 @@ static int handle_opts(int argc, char ** argv)  {
   if(argc != 2) {
     usage();
     fprintf(stderr,"Config file not specified\n");
-    stopsig=4;
+    stopsig=104;
     cleanupAndExit(stopsig);
   }
   if (readConfig(argv[1]) == -1) {
     usage();
     fprintf(stderr,"Too many q3302ew.d config problems\n");
-    stopsig=5;
+    stopsig=105;
     cleanupAndExit(stopsig);
   }
   return 1;
