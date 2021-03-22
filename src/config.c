@@ -250,7 +250,6 @@ void printConfigStructToLog() {
 
   fprintf(stdout, "+++ Current Configuration:\n");
   fprintf(stdout, "--- ConfigFileName: %s\n", gConfig.ConfigFileName);
-  fprintf(stdout, "--- ModuleId: %s\n", gConfig.ModuleId);
     fprintf(stdout, "--- DatalinkHost: %s\n", gConfig.datalinkHost);
     fprintf(stdout, "--- DatalinkPort: %d\n", gConfig.datalinkPort);
   fprintf(stdout, "--- LogFile: %d\n", gConfig.LogFile);
