@@ -614,12 +614,17 @@ void lib330Interface_1SecCallback(pointer p){
   ms_strncpclean (msr->channel, data->channel, 3);
   startTS = janFirst2000 + data->timestamp;
   msr->starttime = (hptime_t)(MS_EPOCH2HPTIME (startTS));
-  msr->samprate = data->rate;
+
   // handle the sub 1hz channels differently
   if(data->rate > 0) {
     msr->numsamples = data->rate;
-  } else {
+    msr->samprate = data->rate;
+  } else if(data->rate < 0) {
     msr->numsamples = 1;
+    msr->samprate = -1.0 * ((double)1.0 / data->rate);
+  } else {
+    msr->numsamples = 0;
+    msr->samprate = data->rate;
   }
   msr->samplecnt = msr->numsamples;
   msr->datasamples = data->samples;
@@ -875,7 +880,7 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
   endtime = msr_endtime (msr);
 
   if ( verbose >= 2 )
-    ms_log (1, "Sending %s\n", streamid);
+    ms_log (1, "Sending %s  %06d\n", streamid, msr->sequence_number);
 
   /* Send record to server, loop */
   while ( dl_write (dlcp, record, reclen, streamid, msr->starttime, endtime, writeack) < 0 )
