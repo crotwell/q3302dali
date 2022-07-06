@@ -897,6 +897,7 @@ static void sendrecord ( char *record, int reclen, void *handlerdata )
 
     if ( ! reconnectinterval )
     {
+      ms_log (2, "ReconnectionInterval is 0, exiting...");
       stopsig = 2;
       break;
     }

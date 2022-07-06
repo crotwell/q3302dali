@@ -228,6 +228,7 @@ int readConfig(char *configFile) {
 void setupDefaultConfiguration() {
   gConfig.RegistrationCyclesLimit = 5;
   gConfig.HeartbeatInt = 10;
+  gConfig.ReconnectInterval = 10;
   gConfig.LogFile = 2;
   gConfig.baseport = 5330;
   gConfig.dataport = 2;
