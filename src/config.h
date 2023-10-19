@@ -17,7 +17,7 @@ typedef struct {
   long RingKey;
   int32  HeartbeatInt;
   int32  LogFile;
-  char IPAddress[16];
+  char IPAddress[250];
   int32  baseport;
   int32  dataport;
   char serialnumber[40];
