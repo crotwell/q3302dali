@@ -526,11 +526,9 @@ void lib330Interface_ping() {
  **/
 int lib330Interface_waitForState(enum tlibstate waitFor, int maxSecondsToWait) {
   int i;
-  int maxLoop = maxSecondsToWait / MAIN_WHILE_USLEEP;
-  if (maxLoop < 2) { maxLoop = 2;}
   for(i=0; i < maxSecondsToWait; i++) {
     if(lib330Interface_getLibState() != waitFor) {
-      dlp_usleep(MAIN_WHILE_USLEEP);
+      dlp_usleep(1e6);
     } else {
       return 1;
     }
